@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Ambulance Routing System</title>
+  <meta name="description" content="AI-powered navigation platform that coordinates with city traffic to create green corridors for ambulances." />
+  <style>
+    /* ------------------------
+       Simple modern styling
+       Single-file demo page
+       ------------------------ */
+    :root{
+      --bg:#0f1724; /* deep navy */
+      --card:#0b1220;
+      --accent:#06b6d4; /* teal */
+      --muted:#9aa6b2;
+      --glass: rgba(255,255,255,0.04);
+      --success:#10b981;
+      --danger:#ef4444;
+      --soft:#111827;
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#071124 60%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+    }
+
+    .container{max-width:1100px;margin:0 auto}
+
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .logo h1{margin:0;font-size:18px}
+    nav a{color:var(--muted);text-decoration:none;margin-left:18px}
+
+    .hero{display:grid;grid-template-columns:1fr 460px;gap:28px;align-items:center;margin-bottom:28px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:22px;border-radius:var(--radius);box-shadow:0 6px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+    .headline{font-size:28px;margin:0 0 12px}
+    .sub{color:var(--muted);line-height:1.45}
+
+    .cta-row{display:flex;gap:12px;margin-top:18px}
+    .btn{padding:12px 16px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#7c3aed);color:#06202a}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    /* mock map area */
+    .map-wrap{height:520px;display:flex;flex-direction:column}
+    .map{flex:1;border-radius:10px;overflow:hidden;margin-top:10px;background:#071325;display:flex;align-items:center;justify-content:center;padding:18px}
+
+    /* Road schematic */
+    .road{width:100%;max-width:880px;height:380px;background:linear-gradient(180deg,#0b1a26,#071024);border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:center;position:relative}
+
+    /* Simple horizontal road with lanes */
+    .street{width:100%;height:80px;background:#1f2937;border-radius:8px;position:relative;margin:18px 0}
+    .lane{height:2px;background:linear-gradient(90deg,#e6eef6,#a3b5bf);position:absolute;left:6%;right:6%;top:50%;transform:translateY(-50%);opacity:0.18}
+
+    /* traffic lights */
+    .traffic-light{width:44px;height:94px;background:#0b1220;border-radius:8px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:8px;position:absolute;box-shadow:0 6px 24px rgba(0,0,0,0.6)}
+    .light{width:22px;height:22px;border-radius:50%;background:#222;border:3px solid rgba(255,255,255,0.04)}
+    .light.on{box-shadow:0 0 18px rgba(255,255,255,0.06)}
+    .light.red.on{background:var(--danger);box-shadow:0 0 12px rgba(239,68,68,0.6)}
+    .light.yellow.on{background:gold;color:#222;box-shadow:0 0 10px rgba(255,200,50,0.45)}
+    .light.green.on{background:var(--success);box-shadow:0 0 12px rgba(16,185,129,0.5)}
+
+    /* ambulance marker */
+    .ambulance{position:absolute;width:56px;height:36px;border-radius:8px;background:linear-gradient(180deg,#fff,#e6f7fb);display:flex;align-items:center;justify-content:center;font-weight:800;color:#06202a;border:3px solid #e6eef6}
+    .siren{width:14px;height:14px;border-radius:2px;background:linear-gradient(90deg,#ff2d55,#ffba08);position:absolute;top:-8px;left:50%;transform:translateX(-50%)}
+
+    .panel{display:flex;flex-direction:column;gap:12px}
+    .small{font-size:13px;color:var(--muted)}
+
+    footer{margin-top:28px;text-align:center;color:var(--muted)}
+
+    /* responsive */
+    @media (max-width:980px){
+      .hero{grid-template-columns:1fr;}
+      .map-wrap{height:420px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="mark">SA</div>
+        <div>
+          <h1>Smart Ambulance Routing</h1>
+          <div style="font-size:12px;color:var(--muted)">AI · Green Corridors · City Traffic Integration</div>
+        </div>
+      </div>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#demo">Live demo</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="card">
+        <h2 class="headline">Clear the way. Save minutes—save lives.</h2>
+        <p class="sub">Smart Ambulance Routing (SAR) uses AI to compute fastest safe corridors and coordinates with city traffic management systems to temporarily prioritize ambulances by controlling traffic signals and advising nearby vehicles.</p>
+
+        <div class="cta-row">
+          <button class="btn btn-primary" id="request-btn">Request Green Corridor</button>
+          <button class="btn btn-ghost" onclick="window.scrollTo({top:700,behavior:'smooth'})">See Demo</button>
+        </div>
+
+        <div style="margin-top:18px" class="panel">
+          <div class="small"><strong>Key features:</strong></div>
+          <ul style="margin:0 0 0 16px;color:var(--muted)">
+            <li>Real-time routing & ETA prediction</li>
+            <li>Traffic-signal coordination (mocked in demo)</li>
+            <li>Priority request to city systems (simulated)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card map-wrap" id="demo">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700">Live corridor simulator</div>
+            <div style="font-size:13px;color:var(--muted)">Mock network — this demo simulates ambulance movement and signal clearing.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="font-size:13px;color:var(--muted)">Status:</div>
+            <div id="status" style="font-weight:700;color:var(--accent)">Idle</div>
+          </div>
+        </div>
+
+        <div class="map card" role="img" aria-label="Map schematic">
+          <div class="road" id="road">
+            <!-- simple road and traffic lights -->
+            <div class="street" style="position:relative">
+              <div class="lane"></div>
+
+              <!-- traffic lights placed along the road -->
+              <div class="traffic-light" id="tl-1" style="left:8%;top:-30px">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+              </div>
+
+              <div class="traffic-light" id="tl-2" style="left:36%;top:-30px">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+              </div>
+
+              <div class="traffic-light" id="tl-3" style="left:64%;top:-30px">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+              </div>
+
+              <div class="traffic-light" id="tl-4" style="left:92%;top:-30px">
+                <div class="light red"></div>
+                <div class="light yellow"></div>
+                <div class="light green"></div>
+              </div>
+
+              <!-- ambulance marker -->
+              <div class="ambulance" id="amb" style="left:6%;top:6px">
+                <div style="position:relative;width:100%;text-align:center">AMB</div>
+                <div class="siren" id="siren"></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="position:absolute;right:24px;bottom:24px;background:var(--glass);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)">
+            <div style="font-size:12px;color:var(--muted)">ETA to destination</div>
+            <div id="eta" style="font-weight:800;font-size:18px">--:--</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="how" style="margin-bottom:18px">
+      <h3 style="margin-top:0">How it works</h3>
+      <ol style="color:var(--muted)">
+        <li>Ambulance broadcasting location -> SAR computes optimal corridor</li>
+        <li>SAR negotiates with Traffic Management API to temporarily change phases</li>
+        <li>Traffic lights along corridor turn green in sequence; nearby drivers alerted</li>
+        <li>Ambulance travels with reduced delay; system returns to normal after passage</li>
+      </ol>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Note: This demo simulates coordination. Real-world integration requires city permissions, secure API links, and strict safety checks.</div>
+    </section>
+
+    <section class="card" id="contact">
+      <h3 style="margin-top:0">Contact & next steps</h3>
+      <p style="color:var(--muted)">Want this adapted to your city? You'll need:</p>
+      <ul style="color:var(--muted)">
+        <li>Access to traffic signal controller APIs (RTSC, NTCIP, vendor-specific interfaces)</li>
+        <li>Secure authentication & audit trails</li>
+        <li>Fail-safe safety rules and manual override for traffic operators</li>
+      </ul>
+      <div style="margin-top:12px">
+        <input id="email" placeholder="your@city.gov" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;width:280px" />
+        <button class="btn btn-primary" style="margin-left:8px" onclick="subscribe()">Request info</button>
+      </div>
+    </section>
+
+    <footer>
+      Built for demo • Not for production use • © Smart Ambulance Routing
+    </footer>
+  </div>
+
+  <script>
+    /* ------------------------------
+       Mock interaction and animation
+       - Simulates ambulance movement
+       - Simulates traffic light coordination
+       - Shows ETA estimate
+       ------------------------------ */
+
+    const requestBtn = document.getElementById('request-btn');
+    const statusEl = document.getElementById('status');
+    const amb = document.getElementById('amb');
+    const etaEl = document.getElementById('eta');
+    const siren = document.getElementById('siren');
+
+    // traffic light nodes
+    const tls = [
+      document.getElementById('tl-1'),
+      document.getElementById('tl-2'),
+      document.getElementById('tl-3'),
+      document.getElementById('tl-4')
+    ];
+
+    // helper to set a traffic light state {red:boolean,yellow:boolean,green:boolean}
+    function setTL(tlEl, {red=false,yellow=false,green=false}){
+      const lights = tlEl.querySelectorAll('.light');
+      lights[0].classList.toggle('on', red);
+      lights[0].classList.toggle('red', red);
+      lights[1].classList.toggle('on', yellow);
+      lights[1].classList.toggle('yellow', yellow);
+      lights[2].classList.toggle('on', green);
+      lights[2].classList.toggle('green', green);
+    }
+
+    // put all signals to default cycle (red)
+    function setAllRed(){tls.forEach(t=>setTL(t,{red:true,yellow:false,green:false}));}
+    setAllRed();
+
+    // animate ambulance along the road from left to right
+    let ambProgress = 0; // 0..1
+    let ambMoving = false;
+    function updateAmbPosition(){
+      const min = 6; const max = 92; // percentages used in style
+      const pct = min + (max-min) * ambProgress;
+      amb.style.left = pct+'%';
+      // ETA mock: distance remaining proportional to (1-ambProgress)
+      const seconds = Math.max(10, Math.round((1-ambProgress)*80));
+      etaEl.textContent = Math.floor(seconds/60).toString().padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
+    }
+
+    function animateSiren(on){
+      siren.style.display = on ? 'block' : 'none';
+    }
+
+    // When user requests corridor
+    requestBtn.addEventListener('click', async ()=>{
+      if(ambMoving) return;
+      ambMoving = true;
+      statusEl.textContent = 'Requesting corridor...';
+
+      // simulate network call to city API with promise
+      await fakeNetwork(900);
+      statusEl.textContent = 'Corridor granted — clearing signals';
+
+      // step 1: sequentially make upcoming lights green while previous go red
+      animateSiren(true);
+
+      // pre-clear: set upcoming lights green in a rolling manner
+      for(let i=0;i<tls.length;i++){
+        // set previous to red, current to green
+        tls.forEach((t,idx)=>{
+          if(idx < i) setTL(t,{red:true});
+          else if(idx===i) setTL(t,{green:true});
+          else setTL(t,{red:true});
+        });
+        await fakeNetwork(700);
+      }
+
+      statusEl.textContent = 'Ambulance en route';
+
+      // start moving ambulance
+      ambProgress = 0.05;
+      updateAmbPosition();
+
+      const moveInterval = setInterval(()=>{
+        ambProgress += 0.01; // small step
+        if(ambProgress>=1){
+          ambProgress = 1;
+          updateAmbPosition();
+          clearInterval(moveInterval);
+          finishRun();
+          return;
+        }
+        updateAmbPosition();
+
+        // when ambulance approaches a light, ensure it's green
+        tls.forEach((t,idx)=>{
+          const lightPct = [0.06,0.36,0.64,0.92][idx];
+          if(ambProgress > lightPct - 0.03 && ambProgress < lightPct + 0.06){
+            setTL(t,{green:true});
+          }
+        });
+      },120);
+
+    });
+
+    function finishRun(){
+      statusEl.textContent = 'Completed — signals returning to auto';
+      animateSiren(false);
+      // brief yellow then red to indicate return to normal
+      tls.forEach((t,i)=>{
+        setTimeout(()=>{ setTL(t,{yellow:true}); }, i*300);
+        setTimeout(()=>{ setTL(t,{red:true}); }, i*400 + 300);
+      });
+      ambMoving = false;
+      setTimeout(()=>statusEl.textContent='Idle',2500);
+    }
+
+    // small helper to simulate latency / async
+    function fakeNetwork(ms=500){
+      return new Promise(res=>setTimeout(res,ms));
+    }
+
+    // subscribe demo
+    function subscribe(){
+      const email = document.getElementById('email').value;
+      if(!email.includes('@')){alert('Please enter a valid email');return}
+      alert('Thanks — we\'ll reach out to ' + email + ' about city integration.');
+    }
+
+    // initial position update
+    updateAmbPosition();
+
+    // keyboard shortcut for demo: press 'G' to request
+    window.addEventListener('keydown', (e)=>{if(e.key.toLowerCase()==='g'){requestBtn.click();}})
+  </script>
+</body>
+</html>
